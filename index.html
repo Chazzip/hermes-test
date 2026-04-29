@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>长沙城区百年发展史 · 动态时间线</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0a0a0f;
+    color: #e8e4de;
+    overflow-x: hidden;
+  }
+  
+  /* 星空背景 */
+  .stars {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 20% 50%, #1a1a2e 0%, #0a0a0f 70%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  .stars::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+      radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(2px 2px at 50px 160px, #ddd, transparent),
+      radial-gradient(2px 2px at 90px 40px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 130px 80px, #fff, transparent);
+    background-size: 200px 200px;
+  }
+
+  /* Hero */
+  .hero {
+    height: 100vh; min-height: 600px;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    position: relative;
+    text-align: center;
+    padding: 2rem;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 0%, #0a0a0f 100%);
+    pointer-events: none;
+  }
+  .hero-title {
+    font-family: 'Noto Serif SC', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    color: #a08f7c;
+    font-weight: 300;
+    letter-spacing: 0.5em;
+    position: relative; z-index: 1;
+  }
+  .hero-desc {
+    max-width: 600px;
+    margin-top: 2rem;
+    font-size: 0.95rem;
+    color: #7a6e5e;
+    line-height: 1.8;
+    position: relative; z-index: 1;
+  }
+  .scroll-hint {
+    position: absolute; bottom: 40px;
+    color: #5a4e3e; font-size: 0.8rem;
+    animation: bob 2s ease-in-out infinite;
+    z-index: 1;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+
+  /* 时间线主体 */
+  .timeline-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1rem 6rem;
+    position: relative;
+  }
+  
+  /* 中央竖线 */
+  .timeline-wrapper::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, 
+      rgba(247,151,30,0.5), 
+      rgba(247,151,30,0.1) 60%,
+      transparent);
+    transform: translateX(-50%);
+  }
+
+  /* 时期分隔标题 */
+  .era-label {
+    text-align: center;
+    margin: 4rem 0 2rem;
+    position: relative;
+    z-index: 2;
+  }
+  .era-label:first-of-type { margin-top: 0; }
+  .era-label span {
+    display: inline-block;
+    padding: 0.6rem 2.5rem;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #f7971e44;
+    border-radius: 30px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #f7971e;
+    letter-spacing: 0.2em;
+    backdrop-filter: blur(10px);
+  }
+
+  /* 时间线卡片 */
+  .timeline-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 2.5rem;
+    position: relative;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .timeline-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .timeline-item.left {
+    flex-direction: row;
+  }
+  .timeline-item.right {
+    flex-direction: row-reverse;
+  }
+  
+  /* 卡片内容 */
+  .timeline-card {
+    width: 42%;
+    padding: 1.8rem 2rem;
+    background: linear-gradient(145deg, #141420, #1a1a28);
+    border: 1px solid #2a2a3e;
+    border-radius: 16px;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  .timeline-card:hover {
+    border-color: #f7971e66;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(247,151,30,0.08);
+  }
+  
+  .timeline-card .year {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #f7971e;
+    margin-bottom: 0.3rem;
+    line-height: 1.2;
+  }
+  .timeline-card .year-sub {
+    font-size: 0.8rem;
+    color: #6a5e4e;
+    margin-bottom: 0.8rem;
+  }
+  .timeline-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8dccc;
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+  .timeline-card p {
+    font-size: 0.88rem;
+    color: #9a8e7e;
+    line-height: 1.8;
+  }
+  .timeline-card .tag {
+    display: inline-block;
+    padding: 0.15rem 0.7rem;
+    font-size: 0.7rem;
+    border-radius: 10px;
+    margin-top: 0.6rem;
+    background: #2a2a3e;
+    color: #8a7e6e;
+  }
+  .tag.war { background: #3e1a1a; color: #e86a6a; }
+  .tag.bridge { background: #1a2e3e; color: #6ab8e8; }
+  .tag.industry { background: #1a3e2a; color: #6ae89a; }
+  .tag.culture { background: #3e2a1a; color: #e8b86a; }
+  .tag.transport { background: #2a1a3e; color: #b86ae8; }
+  .tag.gov { background: #1a2a3e; color: #6a8ae8; }
+  .tag.fire { background: #3e1a0a; color: #ff8a4a; }
+
+  /* 中间连接点 */
+  .timeline-dot {
+    position: absolute;
+    left: 50%;
+    top: 2.2rem;
+    width: 14px; height: 14px;
+    background: #f7971e;
+    border: 3px solid #0a0a0f;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    box-shadow: 0 0 12px rgba(247,151,30,0.3);
+    transition: box-shadow 0.3s;
+  }
+  .timeline-card:hover + .timeline-dot,
+  .timeline-item:hover > .timeline-dot {
+    box-shadow: 0 0 20px rgba(247,151,30,0.6);
+  }
+
+  /* 连接线 */
+  .timeline-connector {
+    position: absolute;
+    left: 50%;
+    top: 2.8rem;
+    width: 4%;
+    height: 2px;
+    background: linear-gradient(90deg, #f7971e44, #f7971e22);
+  }
+  .timeline-item.left .timeline-connector {
+    left: 42%;
+  }
+  .timeline-item.right .timeline-connector {
+    left: 54%;
+  }
+
+  /* 结尾 */
+  .footer-note {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #5a4e3e;
+    font-size: 0.85rem;
+    line-height: 2;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .footer-note a { color: #f7971e88; text-decoration: none; }
+  .footer-note a:hover { color: #f7971e; }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .timeline-wrapper::before { left: 20px; }
+    .timeline-item.left, .timeline-item.right {
+      flex-direction: row;
+      padding-left: 50px;
+    }
+    .timeline-card { width: 100%; }
+    .timeline-dot { left: 20px; top: 2rem; }
+    .timeline-connector { display: none; }
+    .era-label span { font-size: 1rem; padding: 0.4rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<header class="hero">
+  <h1 class="hero-title">长沙百年</h1>
+  <p class="hero-sub">1920s · 2020s</p>
+  <p class="hero-desc">一座被大火烧过、被战争犁过、却一次次在废墟上重生的城市。<br>从湘江边的古城墙，到千万级人口的大都市。<br>这是长沙城区近一百年的成长故事。</p>
+  <div class="scroll-hint">↓ 向下滑动 ↓</div>
+</header>
+
+<div class="timeline-wrapper">
+
+  <!-- ===== 1920-1937 ===== -->
+  <div class="era-label"><span>📜 民国繁华 · 1920 — 1937</span></div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1920s</div>
+      <div class="year-sub">长沙开埠后的黄金时代</div>
+      <h3>城墙拆除 · 古城向近代城市蜕变</h3>
+      <p>1924年起，长沙古城墙陆续拆除，在原基址上修建环城马路（今芙蓉路一段）。这是长沙从传统城池走向现代城市的关键一步。湘江沿岸码头林立，长沙成为当时中国重要的米市和茶叶集散中心。</p>
+      <span class="tag gov">城建</span>
+      <span class="tag industry">米市</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">1927</div>
+      <div class="year-sub">北伐时期</div>
+      <h3>长沙设市 · 正式建市</h3>
+      <p>1927年，长沙正式设市，成立市政筹备处。1933年，长沙市政府正式成立，长沙成为湖南省会城市。城区范围以南起西湖路、北至新河、东抵浏阳门、西濒湘江为界，面积约6.7平方公里，人口约30万。</p>
+      <span class="tag gov">行政区划</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1934</div>
+      <div class="year-sub">抗战前繁荣期</div>
+      <h3>中山路·国货陈列馆·八角亭</h3>
+      <p>中山路成为长沙最繁华的商业街，国货陈列馆（今中山百货）落成，八角亭一带商铺云集。长沙城区沿湘江呈南北带状发展，五一路尚未修建，城南城北以老城墙遗址为界。人口增至约40万。</p>
+      <span class="tag culture">商业</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 1938-1949 ===== -->
+  <div class="era-label"><span>🔥 浴火重生 · 1938 — 1949</span></div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1938.11.13</div>
+      <div class="year-sub">文夕大火</div>
+      <h3>🔥 文夕大火 · 千年古城付之一炬</h3>
+      <p>日军逼近长沙，国民政府实行"焦土政策"，因误传信号，13日凌晨大火骤起。大火烧了五天五夜，全城90%以上房屋被毁，2万余人丧生，30万人流离失所。长沙成为二战中受损最严重的城市之一，与斯大林格勒、广岛齐名。千年古城、无数文物典籍化为灰烬。</p>
+      <span class="tag fire">文夕大火</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">1939 — 1944</div>
+      <div class="year-sub">长沙会战</div>
+      <h3>四次长沙会战 · 血肉筑城</h3>
+      <p>中国军队与日军在长沙地区展开四次大规模会战。前三次会战（1939、1941、1941年底）中国军队取得胜利，极大鼓舞了全国抗战信心。薛岳将军的"天炉战法"在长沙城郊大显神威。1944年第四次会战中长沙沦陷，直至1945年光复。</p>
+      <span class="tag war">抗战</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1949.8.5</div>
+      <div class="year-sub">和平解放</div>
+      <h3>长沙和平解放</h3>
+      <p>1949年8月5日，中国人民解放军进入长沙，长沙和平解放。经历大火和战争摧残的长沙城满目疮痍，城区面积不足7平方公里，人口仅30余万，到处是废墟和棚户。百废待兴。</p>
+      <span class="tag gov">解放</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 1949-1978 ===== -->
+  <div class="era-label"><span>🏗️ 恢复建设 · 1949 — 1978</span></div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">1951</div>
+      <div class="year-sub">新城规划</div>
+      <h3>五一路动工 · 城市中轴线诞生</h3>
+      <p>1951年，长沙第一条现代城市主干道——五一路动工修建，从五一广场直通湘江边。这是长沙城市规划的第一个大手笔，标志着城市重心从沿江带状向东西纵深发展。五一路日后成为长沙的"长安街"。</p>
+      <span class="tag transport">交通</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1972</div>
+      <div class="year-sub">第一座湘江大桥</div>
+      <h3>🌉 湘江一桥通车 · 天堑变通途</h3>
+      <p>1972年，长沙首座湘江大桥——湘江一桥（现橘子洲大桥）建成通车。在此之前，湘江两岸全靠轮渡。大桥全长1250米，连接五一西路和岳麓山下的溁湾镇，河西开发从此拉开序幕。通车那天，全城百姓涌上桥头，万人空巷。</p>
+      <span class="tag bridge">桥梁</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 1978-2000 ===== -->
+  <div class="era-label"><span>🚀 改革腾飞 · 1978 — 2000</span></div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">1980s</div>
+      <div class="year-sub">改革开放初期</div>
+      <h3>城区跨越湘江 · 大规模向西发展</h3>
+      <p>改革开放后，长沙城区开始大规模跨越湘江向西扩展。岳麓区从郊区升格为城区，高校区（岳麓山大学城）逐步成形。劳动路、韶山路等干道陆续通车，城区面积从不足20平方公里扩展到约100平方公里。</p>
+      <span class="tag gov">城区扩张</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">1990s</div>
+      <div class="year-sub">城市巨变</div>
+      <h3>再建三座湘江大桥 · 五一路全面拓宽</h3>
+      <p>1990年代，月亮岛大桥、银盆岭大桥、猴子石大桥相继建成通车，湘江两岸联系更加紧密。1998年五一路全面拓宽至60米。长沙火车站（1977年建成）成为京广线上的重要枢纽。五一商圈成为中部第一商圈，城市面貌日新月异。</p>
+      <span class="tag bridge">桥梁</span>
+      <span class="tag transport">交通</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">1996</div>
+      <div class="year-sub">区划大调整</div>
+      <h3>城区大扩容 · 四区变五区</h3>
+      <p>1996年，长沙市区划大调整：东区、南区、西区、北区、郊区五区撤销，重组为芙蓉区、天心区、岳麓区、开福区、雨花区。2001年增设望城县改区（后改为望城区）。这一调整为21世纪的大规模开发奠定了行政基础。</p>
+      <span class="tag gov">行政区划</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 2000-2010 ===== -->
+  <div class="era-label"><span>🏙️ 中部崛起 · 2000 — 2010</span></div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">2005</div>
+      <div class="year-sub">三桥时代到六桥时代</div>
+      <h3>城区人口突破200万 · 三环线贯通</h3>
+      <p>2005年长沙城区人口突破200万，进入大城市行列。黑石铺大桥、三汊矶大桥建成，长沙进入"六桥时代"。三环线（绕城高速）贯通，城市框架全面拉开。长沙高新区、长沙经开区成为产业引擎，工程机械产业（三一、中联）异军突起。</p>
+      <span class="tag industry">产业</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">2007</div>
+      <div class="year-sub">长株潭一体化</div>
+      <h3>长株潭获批"两型社会"试验区</h3>
+      <p>长沙、株洲、湘潭三市一体化发展正式上升为国家战略。长沙向南拓展，天心区南部、雨花区南部大开发启动。省政府南迁至天心区，南城成为新的政务中心。暮云、大托等南部片区融入主城。</p>
+      <span class="tag gov">长株潭</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">2009</div>
+      <div class="year-sub">文化产业的崛起</div>
+      <h3>广电湘军 · 长沙成"娱乐之都"</h3>
+      <p>湖南卫视（马栏山）影响力辐射全国，湖南广电成为中国文化产业的标杆。"超级女声""快乐大本营"等IP让长沙成为"星城"。与此同时，长沙GDP突破3000亿元，超越郑州，成为中部第二城。</p>
+      <span class="tag culture">文化</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 2010-2020 ===== -->
+  <div class="era-label"><span>🚇 地铁时代 · 2010 — 2020</span></div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">2011</div>
+      <div class="year-sub">高铁枢纽</div>
+      <h3>长沙南站投用 · 高铁十字枢纽</h3>
+      <p>京广高铁与沪昆高铁在长沙交会，长沙南站成为国家级高铁枢纽。高铁开通后，长沙到广州2小时、到深圳2.5小时、到北京5小时、到上海4小时，区位优势全面激活。高铁新城（武广片区）拔地而起。</p>
+      <span class="tag transport">高铁</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">2014</div>
+      <div class="year-sub">地铁元年</div>
+      <h3>🚇 地铁2号线开通 · 长沙进入地铁时代</h3>
+      <p>2014年4月29日，长沙地铁2号线开通运营，长沙成为中部第二个开通地铁的城市。地铁2号线东西横贯城市，从梅溪湖经五一广场到长沙南站。此后1号线（2016）、4号线（2019）、3号线和5号线（2020）相继通车，城区通勤革命性改观。</p>
+      <span class="tag transport">地铁</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">2015</div>
+      <div class="year-sub">国家级新区</div>
+      <h3>湘江新区获批 · 河西大开发</h3>
+      <p>湖南湘江新区成为全国第12个、中部首个国家级新区。梅溪湖国际新城、洋湖垸湿地、滨江新城、大王山旅游度假区等一系列新城项目如雨后春笋般涌现。河西从昔日的"乡下"变成了长沙最现代化的城市板块。</p>
+      <span class="tag gov">湘江新区</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">2017</div>
+      <div class="year-sub">新一线城市</div>
+      <h3>GDP破万亿 · 新一线城市</h3>
+      <p>2017年长沙GDP突破1万亿元，成为中部第三座万亿城市（仅次于武汉、郑州）。工程机械（三一重工、中联重科、山河智能）、汽车制造、电子信息、文化创意形成四大支柱产业。长沙房价在中部省会中处于洼地，被称为"房价洼地、幸福高地"。</p>
+      <span class="tag industry">经济</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">2020</div>
+      <div class="year-sub">城市骨架全面拉开</div>
+      <h3>六区一县 · 城区人口近600万</h3>
+      <p>长沙市下辖芙蓉、天心、岳麓、开福、雨花、望城六区及长沙县。城区建成面积超400平方公里，常住人口约600万（全市超1000万）。绕城高速、长株潭城际铁路、磁浮快线、地铁网络构成多维交通体系。城市边界已推到长沙县星沙、望城斑马湖、宁乡经开区。</p>
+      <span class="tag gov">行政区划</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <!-- ===== 2020s至今 ===== -->
+  <div class="era-label"><span>🌟 新十年 · 2020 — 至今</span></div>
+
+  <div class="timeline-item left">
+    <div class="timeline-card">
+      <div class="year">2022</div>
+      <div class="year-sub">网红城市</div>
+      <h3>茶颜悦色·文和友·岳麓山 · 长沙成顶流</h3>
+      <p>长沙成为全国最火爆的网红旅游城市。五一商圈日均客流量超百万，茶颜悦色、超级文和友、黑色经典等本土品牌走向全国。岳麓山橘子洲景区年游客量超千万。长沙的国际知名度飙升，被联合国教科文组织评为"世界媒体艺术之都"。</p>
+      <span class="tag culture">文旅</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+  <div class="timeline-item right">
+    <div class="timeline-card">
+      <div class="year">2023+</div>
+      <div class="year-sub">科创时代</div>
+      <h3>打造全球研发中心城市</h3>
+      <p>长沙提出建设"全球研发中心城市"目标，以湘江科学城为核心载体，依托国防科大、中南大学、湖南大学等高校的科研力量，在超级计算机（天河系列）、北斗导航、半导体（景嘉微）、新能源汽车（比亚迪长沙基地）等领域发力。长沙正从"工程机械之都"迈向"科创之城"。</p>
+      <span class="tag industry">科创</span>
+    </div>
+    <div class="timeline-connector"></div>
+    <div class="timeline-dot"></div>
+  </div>
+
+</div>
+
+<div class="footer-note">
+  <p>📖 资料来源：长沙市地方志、《长沙史话》、湖南省档案馆、维基百科、政府官网</p>
+  <p>本时间线力求准确，如有疏漏欢迎指正 · 2026年4月</p>
+  <p style="margin-top:1rem; font-size:0.75rem;">从废墟中站起来的城市，终将站在光里。</p>
+</div>
+
+<script>
+  // Intersection Observer 实现滚动动画
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.timeline-item').forEach(item => {
+    observer.observe(item);
+  });
+
+  // 页面加载后立即显示首屏可见的卡片
+  setTimeout(() => {
+    document.querySelectorAll('.timeline-item').forEach(item => {
+      const rect = item.getBoundingClientRect();
+      if (rect.top < window.innerHeight) {
+        item.classList.add('visible');
+      }
+    });
+  }, 200);
+</script>
+</body>
+</html>
